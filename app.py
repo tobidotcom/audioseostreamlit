@@ -12,16 +12,20 @@ def get_user_metadata():
     st.write("Let's fill in the metadata for your audio files! 🎵")
     metadata = {}
 
-    metadata['album_title'] = st.text_input("What is the album title?", value="Unknown", key="album_title")
-    metadata['album_artist'] = st.text_input("Who is the album artist?", value="Unknown", key="album_artist")
+    metadata['album_title'] = st.text_input("What is the album title?", key="album_title")
+    metadata['album_artist'] = st.text_input("Who is the album artist?", key="album_artist")
     metadata['year'] = st.text_input("What year was the album released? (or press Enter to skip):", key="year")
-    if metadata['year']:
+    if not metadata['year']:
+        metadata['year'] = None
+    else:
         try:
             metadata['year'] = int(metadata['year'])
         except ValueError:
-            st.warning(f"Invalid year: '{metadata['year']}'. Setting year to 'Unknown'.")
-            metadata['year'] = 'Unknown'
-    metadata['genre'] = st.text_input("What is the genre of the album?", value="Unknown", key="genre")
+            st.warning(f"Invalid year: '{metadata['year']}'. Setting year to None.")
+            metadata['year'] = None
+    metadata['genre'] = st.text_input("What is the genre of the album?", key="genre")
+    metadata['keywords'] = st.text_input("Enter 3 comma-separated keywords (e.g., rock,alternative,indie):", key="keywords")
+    metadata['author_url'] = st.text_input("Enter the author's website URL (or press Enter to skip):", key="author_url")
 
     return metadata
 
@@ -39,20 +43,28 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
         audio.add_tags()
         audio.tags = ID3()
 
-    audio.tags.add(TALB(encoding=3, text=metadata['album_title']))
-    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist']))
-    if metadata['year'] != 'Unknown':
+    audio.tags.add(TALB(encoding=3, text=metadata['album_title'] or ""))
+    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist'] or ""))
+    if metadata['year']:
         audio.tags.add(TDRC(encoding=3, text=str(metadata['year'])))
     audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     audio.tags.add(TIT2(encoding=3, text=audio_file.name))  # Add title tag
-    audio.tags.add(TCON(encoding=3, text=metadata['genre']))  # Add genre tag
+    audio.tags.add(TCON(encoding=3, text=metadata['genre'] or ""))  # Add genre tag
+
+    # Process keywords
+    keywords = [keyword.strip().lower().replace(' ', '-') for keyword in metadata['keywords'].split(',')]
+    keywords = '-'.join(keywords[:3])  # Take only the first 3 keywords
+
+    # Add author URL tag
+    if metadata['author_url']:
+        audio.tags.add(mutagen.id3.WXXX(encoding=3, desc='Author URL', text=metadata['author_url']))
 
     audio.save(audio_io)
     audio_io.seek(0)  # Reset the BytesIO object to the beginning
 
     # Rename the file with SEO-friendly name
     file_name, file_ext = os.path.splitext(audio_file.name)
-    seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}{file_ext}"
+    seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{keywords}-{file_name.lower().replace(' ', '-')}{file_ext}"
     new_file_path = os.path.join(temp_dir, seo_friendly_name)
     with open(new_file_path, 'wb') as f:
         f.write(audio_io.getbuffer())
