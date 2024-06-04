@@ -53,47 +53,48 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     
     if audio.tags is None:
         audio.add_tags()
+        audio.tags = ID3()
 
-    audio.tags.setall('TALB', [mutagen.id3.TIT2(encoding=3, text=metadata['title'])])
+    audio.tags.add(TALB(encoding=3, text=metadata['title']))
     if metadata['subtitle']:
-        audio.tags.setall('TIT3', [mutagen.id3.TIT3(encoding=3, text=metadata['subtitle'])])
+        audio.tags.add(TIT3(encoding=3, text=metadata['subtitle']))
     
     # Map the slider value (1-5) to the 0-255 range
     rating = int((metadata['rating'] - 1) * 51)
-    audio.tags.setall('POPM', [mutagen.id3.POPM(email='rating@example.com', rating=rating, count=1)])
+    audio.tags.add(POPM(email='rating@example.com', rating=rating, count=1))
     
     if metadata['comments']:
-        audio.tags.setall('COMM', [mutagen.id3.COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments'])])
+        audio.tags.add(COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments']))
     if metadata['contributing_artists']:
-        audio.tags.setall('TPE1', [mutagen.id3.TPE1(encoding=3, text=metadata['contributing_artists'])])
-    audio.tags.setall('TPE2', [mutagen.id3.TPE2(encoding=3, text=metadata['album_artist'])])
+        audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists']))
+    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist']))
     if metadata['year'] != 'Unknown':
-        audio.tags.setall('TDRC', [mutagen.id3.TDRC(encoding=3, text=str(metadata['year']))])
-    audio.tags.setall('TRCK', [mutagen.id3.TRCK(encoding=3, text=str(track_number))])
+        audio.tags.add(TDRC(encoding=3, text=str(metadata['year'])))
+    audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     if metadata['genre']:
-        audio.tags.setall('TCON', [mutagen.id3.TCON(encoding=3, text=metadata['genre'])])
+        audio.tags.add(TCON(encoding=3, text=metadata['genre']))
     if metadata['publisher']:
-        audio.tags.setall('TPUB', [mutagen.id3.TPUB(encoding=3, text=metadata['publisher'])])
+        audio.tags.add(TPUB(encoding=3, text=metadata['publisher']))
     if metadata['copyright']:
-        audio.tags.setall('TCOP', [mutagen.id3.TCOP(encoding=3, text=metadata['copyright'])])
+        audio.tags.add(TCOP(encoding=3, text=metadata['copyright']))
     if metadata['author_url']:
-        audio.tags.setall('WOAR', [mutagen.id3.WOAR(encoding=3, text=metadata['author_url'])])
+        audio.tags.add(WOAR(encoding=3, text=metadata['author_url']))
     if metadata['website_publisher']:
-        audio.tags.setall('WPUB', [mutagen.id3.WPUB(encoding=3, text=metadata['website_publisher'])])
+        audio.tags.add(WPUB(encoding=3, text=metadata['website_publisher']))
     if metadata['composers']:
-        audio.tags.setall('TXXX:Composers', [mutagen.id3.TXXX(encoding=3, desc='Composers', text=metadata['composers'])])
+        audio.tags.add(TXXX(encoding=3, desc='Composers', text=metadata['composers']))
     if metadata['conductors']:
-        audio.tags.setall('TXXX:Conductors', [mutagen.id3.TXXX(encoding=3, desc='Conductors', text=metadata['conductors'])])
+        audio.tags.add(TXXX(encoding=3, desc='Conductors', text=metadata['conductors']))
     if metadata['group_description']:
-        audio.tags.setall('TIT1', [mutagen.id3.TIT1(encoding=3, text=metadata['group_description'])])
+        audio.tags.add(TIT1(encoding=3, text=metadata['group_description']))
     if metadata['mood']:
-        audio.tags.setall('TMOO', [mutagen.id3.TMOO(encoding=3, text=metadata['mood'])])
+        audio.tags.add(TMOO(encoding=3, text=metadata['mood']))
     if metadata['part_of_set']:
-        audio.tags.setall('TXXX:Part of a Set', [mutagen.id3.TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set'])])
+        audio.tags.add(TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set']))
     if metadata['original_key']:
-        audio.tags.setall('TXXX:Original Key', [mutagen.id3.TXXX(encoding=3, desc='Original Key', text=metadata['original_key'])])
+        audio.tags.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key']))
     if metadata['protected']:
-        audio.tags.setall('TXXX:Protected', [mutagen.id3.TXXX(encoding=3, desc='Protected', text=metadata['protected'])])
+        audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected']))
 
     audio.save(audio_io, v2_version=3)
     audio_io.seek(0)  # Reset the BytesIO object to the beginning
