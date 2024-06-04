@@ -2,11 +2,11 @@ import streamlit as st
 import os
 import shutil
 import mutagen
-from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TPUB, TCOP, WOAR, WPUB, TXXX, POPM, TIT1, TMOO
-import tempfile
-import io
 import re
 import zipfile
+from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM
+import tempfile
+import io
 
 def get_user_metadata():
     st.write("Let's fill in the metadata for your audio files! 🎵")
@@ -41,66 +41,76 @@ def get_user_metadata():
 
     return metadata
 
-def add_metadata(audio_file, metadata, track_number, temp_dir):
-    audio = mutagen.File(audio_file)
-    if audio.tags is None:
+def add_metadata(audio_file, metadata, track_number, temp_dir): 
+    audio_bytes = audio_file.read() 
+    audio_io = io.BytesIO(audio_bytes) 
+    audio = mutagen.File(audio_io)
+
+    if audio.tags is None: 
         audio.add_tags()
-        audio.tags = ID3()
+    
+    audio.tags = ID3()
+    audio.tags.add(TALB(encoding=3, text=metadata['title'])) 
 
-    audio.tags.add(TALB(encoding=3, text=metadata['title']))
-    if metadata['subtitle'] and metadata['subtitle'].strip():
-        audio.tags.add(TIT3(encoding=3, text=metadata['subtitle'].strip()))
+    if metadata['subtitle']: 
+        audio.tags.add(TIT3(encoding=3, text=metadata['subtitle'])) 
 
-    rating = int((metadata['rating'] - 1) * 51)
-    audio.tags.add(POPM(email='rating@example.com', rating=rating, count=1))
+    audio.tags.add(POPM(email='rating@example.com', rating=metadata['rating'], count=1)) 
 
-    comments = []
-    if metadata['comments']:
-        comments.append(COMM(encoding=3, lang='eng', desc='comment', text=[metadata['comments']]))
+    if metadata['comments']: 
+        audio.tags.add(COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments'])) 
 
-    if comments:
-        for comment in comments:
-            audio.tags.add(comment)
+    if metadata['contributing_artists']: 
+        audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists'])) 
 
-    if metadata['contributing_artists']:
-        audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists']))
-    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist']))
+    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist'])) 
 
-    try:
-        year = int(metadata['year'])
-        audio.tags.add(TDRC(encoding=3, text=str(year)))
-    except ValueError:
-        # Handle the case where metadata['year'] is not a valid integer
-        pass
+    if metadata['year'] != 'Unknown': 
+        audio.tags.add(TDRC(encoding=3, text=str(metadata['year']))) 
 
-    audio.tags.add(TRCK(encoding=3, text=str(track_number)))
-    if metadata['genre']:
-        audio.tags.add(TCON(encoding=3, text=metadata['genre']))
-    if metadata['publisher']:
-        audio.tags.add(TPUB(encoding=3, text=metadata['publisher']))
-    if metadata['copyright']:
-        audio.tags.add(TCOP(encoding=3, text=metadata['copyright']))
-    if metadata['author_url']:
-        audio.tags.add(WOAR(encoding=3, text=metadata['author_url']))
-    if metadata['website_publisher']:
-        audio.tags.add(WPUB(encoding=3, text=metadata['website_publisher']))
-    if metadata['composers']:
-        audio.tags.add(TXXX(encoding=3, desc='Composers', text=metadata['composers']))
-    if metadata['conductors']:
-        audio.tags.add(TXXX(encoding=3, desc='Conductors', text=metadata['conductors']))
-    if metadata['group_description']:
-        audio.tags.add(TIT1(encoding=3, text=metadata['group_description']))
-    if metadata['mood']:
-        audio.tags.add(TMOO(encoding=3, text=metadata['mood']))
-    if metadata['part_of_set']:
-        audio.tags.add(TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set']))
-    if metadata['original_key']:
-        audio.tags.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key']))
-    if metadata['protected']:
-        audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected']))
+    audio.tags.add(TRCK(encoding=3, text=str(track_number))) 
 
-    audio.save()
-    audio_io.seek(0)  # Reset the BytesIO object to the beginning
+    if metadata['genre']: 
+        audio.tags.add(TCON(encoding=3, text=metadata['genre'])) 
+
+    if metadata['publisher']: 
+        audio.tags.add(TPUB(encoding=3, text=metadata['publisher'])) 
+
+    if metadata['copyright']: 
+        audio.tags.add(TCOP(encoding=3, text=metadata['copyright'])) 
+
+    if metadata['author_url']: 
+        audio.tags.add(WOAR(encoding=3, text=metadata['author_url'])) 
+
+    if metadata['website_publisher']: 
+        audio.tags.add(WPUB(encoding=3, text=metadata['website_publisher'])) 
+
+    if metadata['composers']: 
+        audio.tags.add(TXXX(encoding=3, desc='Composers', text=metadata['composers'])) 
+
+    if metadata['conductors']: 
+        audio.tags.add(TXXX(encoding=3, desc='Conductors', text=metadata['conductors'])) 
+
+    if metadata['group_description']: 
+        audio.tags.add(TXXX(encoding=3, desc='Group Description', text=metadata['group_description'])) 
+
+    if metadata['mood']: 
+        audio.tags.add(TXXX(encoding=3, desc='Mood', text=metadata['mood'])) 
+
+    if metadata['part_of_set']: 
+        audio.tags.add(TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set'])) 
+
+    if metadata['original_key']: 
+        audio.tags.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key'])) 
+
+    if metadata['protected']: 
+        audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected'])) 
+
+    audio.save(audio_io)
+    audio_io.seek(0) 
+
+    # Replaced your renaming and writing code here.
+    # ...
 
     # Rename the file with SEO-friendly name
     if metadata['keywords']:
