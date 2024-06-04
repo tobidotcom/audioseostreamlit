@@ -85,7 +85,7 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
 
 
     # Save the changes to the temporary file
-    audio.save(temp_file_path)
+    audio.save
 
     # Rename the file with SEO-friendly name
     if metadata['keywords']:
