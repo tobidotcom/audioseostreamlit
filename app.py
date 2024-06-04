@@ -4,7 +4,7 @@ import shutil
 import mutagen
 import re
 import zipfile
-from mutagen.id3 import ID3, TRCK, TALB, TPE2, TDRC, TIT2, TCON
+from mutagen.id3 import ID3, TRCK, TALB, TPE2, TDRC, TIT2, TCON, POPM
 import tempfile
 import io
 
@@ -23,7 +23,6 @@ def get_user_metadata():
             metadata['year'] = 'Unknown'
     metadata['genre'] = st.text_input("What is the genre of the album?", value="Unknown", key="genre")
     metadata['keywords'] = st.text_input("Enter 3 comma-separated keywords (e.g., rock,alternative,indie):", key="keywords")
-    metadata['author_url'] = st.text_input("Enter the author's website URL (or press Enter to skip):", key="author_url")
 
     return metadata
 
@@ -48,14 +47,13 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     audio.tags.add(TIT2(encoding=3, text=audio_file.name))  # Add title tag
     audio.tags.add(TCON(encoding=3, text=metadata['genre']))  # Add genre tag
+    
+    # Add 5-star rating
+    audio.tags.add(POPM(email='rating@example.com', rating=256, count=1))
 
     # Process keywords
     keywords = [keyword.strip().lower().replace(' ', '-') for keyword in metadata['keywords'].split(',')]
     keywords = '-'.join(keywords[:3])  # Take only the first 3 keywords
-
-    # Add author URL tag
-    if metadata['author_url']:
-        audio.tags.add(mutagen.id3.WXXX(encoding=3, desc='Author URL', text=metadata['author_url']))
 
     audio.save(audio_io)
     audio_io.seek(0)  # Reset the BytesIO object to the beginning
