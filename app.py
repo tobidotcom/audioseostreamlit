@@ -4,7 +4,7 @@ import shutil
 import mutagen
 import re
 import zipfile
-from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM, TIT1, TMOO
+from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM, TMOO, TIT1
 import tempfile
 import io
 
@@ -42,7 +42,15 @@ def get_user_metadata():
     return metadata
 
 def add_metadata(audio_file, metadata, track_number, temp_dir):
-    audio = mutagen.File(audio_file)
+    # Read the bytes from the UploadedFile object
+    audio_bytes = audio_file.read()
+    
+    # Create a BytesIO object with the audio bytes
+    audio_io = io.BytesIO(audio_bytes)
+    
+    # Pass the BytesIO object to mutagen.File
+    audio = mutagen.File(audio_io)
+    
     if audio.tags is None:
         audio.add_tags()
         audio.tags = ID3()
@@ -50,13 +58,13 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     audio.tags.add(TALB(encoding=3, text=metadata['title']))
     if metadata['subtitle']:
         audio.tags.add(TIT3(encoding=3, text=metadata['subtitle']))
-    audio.tags.add(POPM(rating=metadata['rating'], count=1))  # Removed email argument
+    audio.tags.add(POPM(email='rating@example.com', rating=metadata['rating'], count=1))
     if metadata['comments']:
         audio.tags.add(COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments']))
     if metadata['contributing_artists']:
         audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists']))
     audio.tags.add(TPE2(encoding=3, text=metadata['album_artist']))
-    if metadata['year']:
+    if metadata['year'] != 'Unknown':
         audio.tags.add(TDRC(encoding=3, text=str(metadata['year'])))
     audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     if metadata['genre']:
@@ -84,7 +92,7 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     if metadata['protected']:
         audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected']))
 
-    audio.save()
+    audio.save(audio_io)
     audio_io.seek(0)  # Reset the BytesIO object to the beginning
 
     # Rename the file with SEO-friendly name
