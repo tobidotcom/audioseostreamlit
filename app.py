@@ -4,7 +4,8 @@ import shutil
 import mutagen
 import re
 import zipfile
-from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM
+from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, 
+     TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM
 import tempfile
 import io
 
@@ -46,72 +47,40 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     audio_io = io.BytesIO(audio_bytes) 
     audio = mutagen.File(audio_io)
 
-    if audio.tags is None: 
-        audio.add_tags()
-    
-    audio.tags = ID3()
-    audio.tags.add(TALB(encoding=3, text=metadata['title'])) 
+    # Create ID3 tag if it doesn't exist
+    if not audio:
+        audio = mutagen.id3.ID3()
 
-    if metadata['subtitle']: 
-        audio.tags.add(TIT3(encoding=3, text=metadata['subtitle'])) 
+    # Replace all tags to avoid duplications
+    audio.delete()
 
-    audio.tags.add(POPM(email='rating@example.com', rating=metadata['rating'], count=1)) 
+    audio.add(TALB(encoding=3, text=metadata['title'])) 
+    audio.add(TIT3(encoding=3, text=metadata['subtitle'])) 
+    audio.add(POPM(email='rating@example.com', rating=metadata['rating'], count=1)) 
+    audio.add(COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments'])) 
+    audio.add(TPE1(encoding=3, text=metadata['contributing_artists'])) 
+    audio.add(TPE2(encoding=3, text=metadata['album_artist'])) 
+    audio.add(TDRC(encoding=3, text=str(metadata['year']))) 
+    audio.add(TRCK(encoding=3, text=str(track_number))) 
+    audio.add(TCON(encoding=3, text=metadata['genre'])) 
+    audio.add(TPUB(encoding=3, text=metadata['publisher'])) 
+    audio.add(TCOP(encoding=3, text=metadata['copyright'])) 
+    audio.add(WOAR(encoding=3, text=metadata['author_url'])) 
+    audio.add(WPUB(encoding=3, text=metadata['website_publisher'])) 
+    audio.add(TXXX(encoding=3, desc='Composers', text=metadata['composers'])) 
+    audio.add(TXXX(encoding=3, desc='Conductors', text=metadata['conductors'])) 
+    audio.add(TXXX(encoding=3, desc='Group Description', text=metadata['group_description'])) 
+    audio.add(TXXX(encoding=3, desc='Mood', text=metadata['mood'])) 
+    audio.add(TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set'])) 
+    audio.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key'])) 
+    audio.add(TXXX(encoding=3, desc='Protected', text=metadata['protected'])) 
 
-    if metadata['comments']: 
-        audio.tags.add(COMM(encoding=3, lang='eng', desc='comment', text=metadata['comments'])) 
+    # Upgrade to v2.3 to make it compatible for windows
+    audio.update_to_v23()
 
-    if metadata['contributing_artists']: 
-        audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists'])) 
-
-    audio.tags.add(TPE2(encoding=3, text=metadata['album_artist'])) 
-
-    if metadata['year'] != 'Unknown': 
-        audio.tags.add(TDRC(encoding=3, text=str(metadata['year']))) 
-
-    audio.tags.add(TRCK(encoding=3, text=str(track_number))) 
-
-    if metadata['genre']: 
-        audio.tags.add(TCON(encoding=3, text=metadata['genre'])) 
-
-    if metadata['publisher']: 
-        audio.tags.add(TPUB(encoding=3, text=metadata['publisher'])) 
-
-    if metadata['copyright']: 
-        audio.tags.add(TCOP(encoding=3, text=metadata['copyright'])) 
-
-    if metadata['author_url']: 
-        audio.tags.add(WOAR(encoding=3, text=metadata['author_url'])) 
-
-    if metadata['website_publisher']: 
-        audio.tags.add(WPUB(encoding=3, text=metadata['website_publisher'])) 
-
-    if metadata['composers']: 
-        audio.tags.add(TXXX(encoding=3, desc='Composers', text=metadata['composers'])) 
-
-    if metadata['conductors']: 
-        audio.tags.add(TXXX(encoding=3, desc='Conductors', text=metadata['conductors'])) 
-
-    if metadata['group_description']: 
-        audio.tags.add(TXXX(encoding=3, desc='Group Description', text=metadata['group_description'])) 
-
-    if metadata['mood']: 
-        audio.tags.add(TXXX(encoding=3, desc='Mood', text=metadata['mood'])) 
-
-    if metadata['part_of_set']: 
-        audio.tags.add(TXXX(encoding=3, desc='Part of a Set', text=metadata['part_of_set'])) 
-
-    if metadata['original_key']: 
-        audio.tags.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key'])) 
-
-    if metadata['protected']: 
-        audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected'])) 
-
-    audio.tags.update_to_v23()
-
-    audio_io.seek(0) 
-
-    # Replaced your renaming and writing code here.
-    # ...
+    # Save the file with changes
+    audio.save(audio_io)
+    audio_io.seek(0)
 
     # Rename the file with SEO-friendly name
     if metadata['keywords']:
