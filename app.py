@@ -4,7 +4,7 @@ import shutil
 import mutagen
 import re
 import zipfile
-from mutagen.id3 import ID3, TRCK, TALB, TPE2, TDRC, TIT2, TCON, POPM
+from mutagen.id3 import ID3, TRCK, TALB, TPE2, TDRC, TIT2, TCON
 import tempfile
 import io
 
@@ -22,7 +22,6 @@ def get_user_metadata():
             st.warning(f"Invalid year: '{metadata['year']}'. Setting year to 'Unknown'.")
             metadata['year'] = 'Unknown'
     metadata['genre'] = st.text_input("What is the genre of the album?", value="Unknown", key="genre")
-    metadata['keywords'] = st.text_input("Enter 3 comma-separated keywords (e.g., rock,alternative,indie):", key="keywords")
 
     return metadata
 
@@ -47,20 +46,13 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     audio.tags.add(TIT2(encoding=3, text=audio_file.name))  # Add title tag
     audio.tags.add(TCON(encoding=3, text=metadata['genre']))  # Add genre tag
-    
-    # Add 5-star rating
-    audio.tags.add(POPM(email='rating@example.com', rating=256, count=1))
-
-    # Process keywords
-    keywords = [keyword.strip().lower().replace(' ', '-') for keyword in metadata['keywords'].split(',')]
-    keywords = '-'.join(keywords[:3])  # Take only the first 3 keywords
 
     audio.save(audio_io)
     audio_io.seek(0)  # Reset the BytesIO object to the beginning
 
     # Rename the file with SEO-friendly name
     file_name, file_ext = os.path.splitext(audio_file.name)
-    seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{keywords}-{file_name.lower().replace(' ', '-')}{file_ext}"
+    seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}{file_ext}"
     new_file_path = os.path.join(temp_dir, seo_friendly_name)
     with open(new_file_path, 'wb') as f:
         f.write(audio_io.getbuffer())
