@@ -4,8 +4,7 @@ import shutil
 import mutagen
 import re
 import zipfile
-from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, 
-     TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM
+from mutagen.id3 import ID3, TRCK, TALB, TIT3, TPE1, TPE2, COMM, TCON, TDRC, TLEN, TBPM, TPUB, TCOP, WOAR, WPUB, TXXX, POPM
 import tempfile
 import io
 
