@@ -84,12 +84,12 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     # Rename the file with SEO-friendly name
     if metadata['keywords']:
         keywords = [re.sub(r'[^a-zA-Z0-9\s]', '', keyword.strip().lower()) for keyword in metadata['keywords'].split(',')]
-        file_name, file_ext = os.path.splitext(os.path.basename(audio_file))
+        file_name, file_ext = os.path.splitext(os.path.basename(audio_file.name))
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}-{'-'.join(keyword for keyword in keywords[:3])[:60]}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
         shutil.copy2(audio_file, new_file_path)
     else:
-        file_name, file_ext = os.path.splitext(os.path.basename(audio_file))
+        file_name, file_ext = os.path.splitext(os.path.basename(audio_file.name))
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
         shutil.copy2(audio_file, new_file_path)
@@ -104,7 +104,7 @@ def main():
     if uploaded_files:
         with tempfile.TemporaryDirectory() as temp_dir:
             for i, file in enumerate(uploaded_files, start=1):
-                audio_file = file.name
+                audio_file = file  # Pass the file object instead of file.name
                 add_metadata(audio_file, metadata, i, temp_dir)
                 st.success(f"Metadata added and file renamed for {file.name}")
 
