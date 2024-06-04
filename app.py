@@ -106,7 +106,8 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     if metadata['protected']: 
         audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected'])) 
 
-    audio.save(audio_io)
+    audio.tags.update_to_v23()
+
     audio_io.seek(0) 
 
     # Replaced your renaming and writing code here.
