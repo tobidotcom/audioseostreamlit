@@ -41,17 +41,7 @@ def get_user_metadata():
     return metadata
 
 def add_metadata(audio_file, metadata, track_number, temp_dir):
-    # Read the bytes from the UploadedFile object
-    audio_bytes = audio_file.read()
-
-    # Create a temporary file to write the changes
-    with tempfile.NamedTemporaryFile(delete=False) as temp_file:
-        temp_file.write(audio_bytes)
-        temp_file_path = temp_file.name
-
-    # Load the audio file using the temporary file path
-    audio = mutagen.File(temp_file_path)
-
+    audio = mutagen.File(audio_file)
     if audio.tags is None:
         audio.add_tags()
         audio.tags = ID3()
@@ -65,7 +55,7 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     if metadata['contributing_artists']:
         audio.tags.add(TPE1(encoding=3, text=metadata['contributing_artists']))
     audio.tags.add(TPE2(encoding=3, text=metadata['album_artist']))
-    if metadata['year'] != 'Unknown':
+    if metadata['year']:
         audio.tags.add(TDRC(encoding=3, text=str(metadata['year'])))
     audio.tags.add(TRCK(encoding=3, text=str(track_number)))
     if metadata['genre']:
@@ -92,6 +82,7 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
         audio.tags.add(TXXX(encoding=3, desc='Original Key', text=metadata['original_key']))
     if metadata['protected']:
         audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected']))
+
 
     # Save the changes to the temporary file
     audio.save(temp_file_path)
