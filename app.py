@@ -42,14 +42,15 @@ def get_user_metadata():
     return metadata
 
 def add_metadata(audio_file, metadata, track_number, temp_dir):
-    if isinstance(audio_file, str):
-        # audio_file is a file path
-        audio = mutagen.File(audio_file)
-    else:
-        # audio_file is a file-like object
-        audio_bytes = audio_file.read()
-        audio = mutagen.File(io.BytesIO(audio_bytes))
-
+    # Read the bytes from the UploadedFile object
+    audio_bytes = audio_file.read()
+    
+    # Create a BytesIO object with the audio bytes
+    audio_io = io.BytesIO(audio_bytes)
+    
+    # Pass the BytesIO object to mutagen.File
+    audio = mutagen.File(audio_io)
+    
     if audio.tags is None:
         audio.add_tags()
         audio.tags = ID3()
@@ -91,20 +92,23 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
     if metadata['protected']:
         audio.tags.add(TXXX(encoding=3, desc='Protected', text=metadata['protected']))
 
-    audio.save()
+    audio.save(audio_io)
+    audio_io.seek(0)  # Reset the BytesIO object to the beginning
 
     # Rename the file with SEO-friendly name
     if metadata['keywords']:
         keywords = [re.sub(r'[^a-zA-Z0-9\s]', '', keyword.strip().lower()) for keyword in metadata['keywords'].split(',')]
-        file_name, file_ext = os.path.splitext(os.path.basename(audio_file))
+        file_name, file_ext = os.path.splitext(audio_file.name)
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}-{'-'.join(keyword for keyword in keywords[:3])[:60]}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
-        shutil.copy2(audio_file, new_file_path)
+        with open(new_file_path, 'wb') as f:
+            f.write(audio_io.getbuffer())
     else:
-        file_name, file_ext = os.path.splitext(os.path.basename(audio_file))
+        file_name, file_ext = os.path.splitext(audio_file.name)
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
-        shutil.copy2(audio_file, new_file_path)
+        with open(new_file_path, 'wb') as f:
+            f.write(audio_io.getbuffer())
 
 def main():
     st.title("Audio Metadata Editor")
@@ -116,8 +120,7 @@ def main():
     if uploaded_files:
         with tempfile.TemporaryDirectory() as temp_dir:
             for i, file in enumerate(uploaded_files, start=1):
-                audio_file = file  # Pass the file object instead of file.name
-                add_metadata(audio_file, metadata, i, temp_dir)
+                add_metadata(file, metadata, i, temp_dir)
                 st.success(f"Metadata added and file renamed for {file.name}")
 
             # Create a zip file with the processed files
