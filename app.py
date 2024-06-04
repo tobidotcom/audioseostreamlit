@@ -87,12 +87,12 @@ def add_metadata(audio_file, metadata, track_number, temp_dir):
         file_name, file_ext = os.path.splitext(os.path.basename(audio_file.name))
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}-{'-'.join(keyword for keyword in keywords[:3])[:60]}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
-        shutil.copy2(audio_file, new_file_path)
+        shutil.copy2(audio_file.name, new_file_path)
     else:
         file_name, file_ext = os.path.splitext(os.path.basename(audio_file.name))
         seo_friendly_name = f"{str(track_number).zfill(2)}-{metadata['album_artist'].lower().replace(' ', '-')}-{file_name.lower().replace(' ', '-')}{file_ext}"
         new_file_path = os.path.join(temp_dir, seo_friendly_name)
-        shutil.copy2(audio_file, new_file_path)
+        shutil.copy2(audio_file.name, new_file_path)
 
 def main():
     st.title("Audio Metadata Editor")
